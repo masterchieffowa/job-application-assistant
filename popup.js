@@ -36,9 +36,9 @@ document.getElementById("extractBtn").addEventListener("click", async () => {
     return;
   }
 
-  const config = await chrome.storage.local.get(["geminiKey"]);
-  if (!config.geminiKey) {
-    showStatus("Please configure your Gemini API key in Settings", "error");
+  const config = await chrome.storage.local.get(["openrouterKey"]);
+  if (!config.openrouterKey) {
+    showStatus("Please configure your GPT API key in Settings", "error");
     return;
   }
 
@@ -49,63 +49,33 @@ document.getElementById("extractBtn").addEventListener("click", async () => {
   showStatus("Analyzing job post with AI...", "success");
 
   try {
-    const extractPrompt = `Extract the following information from this job post and return ONLY a valid JSON object with no additional text or markdown:
+    const extractPrompt = `Extract the following information from this job post and return ONLY a valid JSON object with no additional text:
 
 Job Post:
 ${jobPost}
 
-Return format (only JSON, no markdown, no backticks):
+Return ONLY this JSON format:
 {
   "jobTitle": "extracted job title",
-  "company": "company name if found, otherwise 'Not specified'",
-  "location": "location if found, otherwise 'Not specified'",
+  "company": "company name or 'Not specified'",
+  "location": "location or 'Not specified'",
   "requirements": ["key requirement 1", "key requirement 2"],
-  "contactInfo": "any email or contact found, otherwise empty string"
+  "contactInfo": "email/contact if found, else empty string"
 }`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${config.geminiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: extractPrompt }] }],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 1000,
-          },
-        }),
-      }
-    );
+    let extractedText = await callOpenRouter(extractPrompt, 0.2, 800);
 
-    if (!response.ok) {
-      throw new Error(
-        `API returned ${response.status}: ${response.statusText}`
-      );
-    }
-
-    const data = await response.json();
-
-    if (
-      !data.candidates ||
-      !data.candidates[0] ||
-      !data.candidates[0].content ||
-      !data.candidates[0].content.parts
-    ) {
-      throw new Error("Invalid API response structure");
-    }
-
-    let extractedText = data.candidates[0].content.parts[0].text;
-
-    // Clean response - remove markdown code blocks and extra text
+    // Cleanup any accidental formatting
     extractedText = extractedText
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .replace(/^[^{]*/, "") // Remove text before first {
-      .replace(/[^}]*$/, "") // Remove text after last }
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
       .trim();
 
-    const extracted = JSON.parse(extractedText);
+    // Force extract JSON only
+    const jsonMatch = extractedText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("Model did not return JSON");
+
+    const extracted = JSON.parse(jsonMatch[0]);
 
     // Display extracted info
     const infoDiv = document.getElementById("extractedInfo");
@@ -115,7 +85,7 @@ Return format (only JSON, no markdown, no backticks):
     html += `<strong>Company:</strong> ${extracted.company}<br>`;
     html += `<strong>Location:</strong> ${extracted.location}<br>`;
 
-    if (extracted.requirements && extracted.requirements.length > 0) {
+    if (Array.isArray(extracted.requirements)) {
       html += `<strong>Key Requirements:</strong><ul>`;
       extracted.requirements.slice(0, 3).forEach((req) => {
         html += `<li>${req}</li>`;
@@ -126,18 +96,14 @@ Return format (only JSON, no markdown, no backticks):
     contentDiv.innerHTML = html;
     infoDiv.classList.remove("hidden");
 
-    // Auto-fill HR email if found
     if (extracted.contactInfo) {
       document.getElementById("hrEmail").value = extracted.contactInfo;
     }
 
     showStatus("✓ Job information extracted successfully!", "success");
   } catch (error) {
-    console.error("Extract error:", error);
-    showStatus(
-      "Error: " + error.message + ". Please check your API key.",
-      "error"
-    );
+    console.error("Extraction Error:", error);
+    showStatus("❌ Failed to extract information. Try again.", "error");
   } finally {
     extractBtn.disabled = false;
     extractBtn.innerHTML = "<span>🔍</span> Extract Job Info (Optional)";
@@ -162,8 +128,8 @@ document.getElementById("generateBtn").addEventListener("click", async () => {
     return;
   }
 
-  const config = await chrome.storage.local.get(["geminiKey"]);
-  if (!config.geminiKey) {
+  const config = await chrome.storage.local.get(["openrouterKey"]);
+  if (!config.openrouterKey) {
     showStatus("Please configure Gemini API key in Settings", "error");
     return;
   }
@@ -175,8 +141,8 @@ document.getElementById("generateBtn").addEventListener("click", async () => {
   showStatus("Generating professional email with AI...", "success");
 
   try {
-    // Generate email body
-    const emailPrompt = `Create a professional job application email based on this job post. 
+    // Email body prompt
+    const emailPrompt = `Create a professional job application email based on this job post.
 
 Job Post:
 ${jobPost}
@@ -188,102 +154,41 @@ ${
 }
 
 Requirements:
-- Professional and engaging tone
+- Professional/engaging tone
 - Highlight relevant qualifications
-- Express genuine interest
-- Keep it concise (150-200 words)
-- Use "Dear Hiring Manager" as greeting
-- End with "Best regards" and a name placeholder [Your Name]
-- Include a call to action
+- Concise (150-200 words)
+- Begin with "Dear Hiring Manager"
+- End with "Best regards" + [Your Name]
+- No subject line
+- Return ONLY the email body text (no markdown, no extra formatting).`;
 
-Return ONLY the email body text. No subject line. No extra formatting. Just the email content.`;
+    const emailBody = await callOpenRouter(emailPrompt, 0.7, 500);
 
-    const emailResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${config.geminiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: emailPrompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1000,
-          },
-        }),
-      }
-    );
+    // Subject line
+    const subjectPrompt = `Create a professional email subject line for a job application.
 
-    if (!emailResponse.ok) {
-      throw new Error(`API returned ${emailResponse.status}`);
-    }
-
-    const emailData = await emailResponse.json();
-
-    if (
-      !emailData.candidates ||
-      !emailData.candidates[0] ||
-      !emailData.candidates[0].content
-    ) {
-      throw new Error("Invalid email response from API");
-    }
-
-    const emailBody = emailData.candidates[0].content.parts[0].text.trim();
-
-    // Generate subject line
-    const subjectPrompt = `Create a professional email subject line for a job application based on this job post:
-
+Job Post:
 ${jobPost}
 
-Return ONLY the subject line (max 10 words). No quotes, no extra text, just the subject line.`;
+Return ONLY the subject line, max 10 words. No quotes, no extra text.`;
 
-    const subjectResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${config.geminiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: subjectPrompt }] }],
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 100,
-          },
-        }),
-      }
-    );
+    let subject = await callOpenRouter(subjectPrompt, 0.4, 60);
 
-    if (!subjectResponse.ok) {
-      throw new Error(`API returned ${subjectResponse.status}`);
-    }
-
-    const subjectData = await subjectResponse.json();
-
-    if (!subjectData.candidates || !subjectData.candidates[0]) {
-      throw new Error("Invalid subject response from API");
-    }
-
-    const subject = subjectData.candidates[0].content.parts[0].text
-      .replace(/['"]/g, "")
-      .replace(/Subject:/gi, "")
-      .replace(/Application for/gi, "Application for")
-      .trim();
+    subject = subject.replace(/['"]/g, "").trim();
 
     // Display results
     document.getElementById("emailSubject").value = subject;
     document.getElementById("emailBody").value = emailBody;
     document.getElementById("emailPreview").classList.remove("hidden");
 
-    // Scroll to preview
     document
       .getElementById("emailPreview")
       .scrollIntoView({ behavior: "smooth", block: "nearest" });
 
-    showStatus(
-      "✓ Email generated! Please review and edit if needed.",
-      "success"
-    );
+    showStatus("✓ Email generated! Please review before sending.", "success");
   } catch (error) {
-    console.error("Generation error:", error);
-    showStatus("Error generating email: " + error.message, "error");
+    console.error("Email Generation Error:", error);
+    showStatus("❌ Failed to generate email. Try again.", "error");
   } finally {
     generateBtn.disabled = false;
     generateBtn.innerHTML = "<span>✨</span> Generate Professional Email";
@@ -314,9 +219,9 @@ document.getElementById("sendBtn").addEventListener("click", () => {
 document
   .getElementById("saveSettingsBtn")
   .addEventListener("click", async () => {
-    const geminiKey = document.getElementById("geminiKey").value.trim();
+    const openrouterKey = document.getElementById("openrouterKey").value.trim();
 
-    if (!geminiKey) {
+    if (!openrouterKey) {
       const statusDiv = document.getElementById("settingsStatus");
       statusDiv.className = "status error";
       statusDiv.textContent = "Please enter an API key";
@@ -324,7 +229,7 @@ document
       return;
     }
 
-    await chrome.storage.local.set({ geminiKey });
+    await chrome.storage.local.set({ openrouterKey });
 
     const statusDiv = document.getElementById("settingsStatus");
     statusDiv.className = "status success";
@@ -337,9 +242,9 @@ document
   });
 
 // Load saved settings
-chrome.storage.local.get(["geminiKey"], (result) => {
-  if (result.geminiKey) {
-    document.getElementById("geminiKey").value = result.geminiKey;
+chrome.storage.local.get(["openrouterKey"], (result) => {
+  if (result.openrouterKey) {
+    document.getElementById("openrouterKey").value = result.openrouterKey;
   }
 });
 
@@ -354,4 +259,41 @@ function showStatus(message, type) {
   setTimeout(() => {
     statusDiv.style.display = "none";
   }, 5000);
+}
+
+async function callOpenRouter(prompt, temperature = 0.3, maxTokens = 800) {
+  const { openrouterKey } = await chrome.storage.local.get(["openrouterKey"]);
+  if (!openrouterKey) throw new Error("Missing OpenRouter API key");
+
+  const response = await fetch(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${openrouterKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://job-extension",
+        "X-Title": "Job Application Assistant",
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-oss-20b:free",
+        temperature,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        max_tokens: maxTokens,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`OpenRouter Error: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  return data.choices?.[0]?.message?.content?.trim() ?? "";
 }

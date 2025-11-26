@@ -1,13 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Job Application Assistant",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Generate professional job application emails from any job post using AI",
   "permissions": ["activeTab", "storage"],
   "host_permissions": [
     "https://*.linkedin.com/*",
     "https://mail.google.com/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://openrouter.ai/*"
   ],
   "action": {
     "default_popup": "popup.html",
