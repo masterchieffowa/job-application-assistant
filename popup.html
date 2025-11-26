@@ -3,12 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
-        width: 450px;
-        min-height: 500px;
+        width: 500px;
+        min-height: 600px;
         margin: 0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           sans-serif;
+        overflow-x: hidden;
       }
       .header {
         background: linear-gradient(135deg, #0077b5, #00a0dc);
@@ -21,6 +25,7 @@
       .tabs {
         display: flex;
         border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
       }
       .tab {
         flex: 1;
@@ -30,92 +35,229 @@
         cursor: pointer;
         font-weight: 500;
         color: #6b7280;
+        transition: all 0.2s;
+      }
+      .tab:hover {
+        background: #f3f4f6;
       }
       .tab.active {
         color: #0077b5;
-        border-bottom: 2px solid #0077b5;
+        border-bottom: 3px solid #0077b5;
+        background: white;
       }
       .content {
-        padding: 16px;
+        padding: 20px;
+        max-height: 500px;
+        overflow-y: auto;
+      }
+      .section {
+        margin-bottom: 16px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
       }
       input,
       textarea,
       select {
         width: 100%;
-        padding: 8px;
-        margin-bottom: 8px;
+        padding: 10px;
+        margin-bottom: 4px;
         border: 1px solid #d1d5db;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 14px;
-        box-sizing: border-box;
+        font-family: inherit;
+        transition: border 0.2s;
+      }
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #0077b5;
+        box-shadow: 0 0 0 3px rgba(0, 119, 181, 0.1);
+      }
+      textarea {
+        resize: vertical;
+        font-family: "Courier New", monospace;
+        line-height: 1.5;
       }
       button {
         width: 100%;
-        padding: 10px;
+        padding: 12px;
         margin-top: 8px;
         border: none;
-        border-radius: 4px;
+        border-radius: 6px;
         cursor: pointer;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 14px;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       .btn-primary {
         background: #0077b5;
         color: white;
       }
-      .btn-primary:hover {
+      .btn-primary:hover:not(:disabled) {
         background: #006399;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       }
       .btn-success {
         background: #10b981;
         color: white;
       }
-      .btn-success:hover {
+      .btn-success:hover:not(:disabled) {
         background: #059669;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .btn-purple {
+        background: #8b5cf6;
+        color: white;
+      }
+      .btn-purple:hover:not(:disabled) {
+        background: #7c3aed;
+      }
+      .btn-send {
+        background: #3b82f6;
+        color: white;
+        font-size: 15px;
+        padding: 14px;
+      }
+      .btn-send:hover:not(:disabled) {
+        background: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
       }
       .status {
         padding: 12px;
         margin-top: 12px;
-        border-radius: 4px;
+        border-radius: 6px;
         font-size: 13px;
+        display: flex;
+        align-items: start;
+        gap: 8px;
+        animation: slideIn 0.3s ease;
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       .status.success {
         background: #d1fae5;
         color: #065f46;
+        border: 1px solid #10b981;
       }
       .status.error {
         background: #fee2e2;
         color: #991b1b;
+        border: 1px solid #ef4444;
       }
       .upload-box {
         border: 2px dashed #d1d5db;
-        padding: 16px;
+        padding: 20px;
         text-align: center;
-        border-radius: 4px;
+        border-radius: 8px;
         cursor: pointer;
         margin-bottom: 12px;
+        transition: all 0.2s;
+      }
+      .upload-box:hover {
+        border-color: #0077b5;
+        background: #f0f9ff;
       }
       .hidden {
-        display: none;
+        display: none !important;
       }
-      label {
+      .info-box {
+        background: #eff6ff;
+        border: 1px solid #3b82f6;
+        border-radius: 6px;
+        padding: 12px;
+        margin: 12px 0;
+      }
+      .info-box h4 {
+        margin: 0 0 8px 0;
+        color: #1e40af;
+        font-size: 14px;
+      }
+      .info-box p {
+        margin: 4px 0;
         font-size: 12px;
-        font-weight: 500;
-        color: #374151;
-        margin-bottom: 4px;
-        display: block;
+        color: #1e40af;
       }
-      .small-text {
+      .info-box ul {
+        margin: 8px 0 0 0;
+        padding-left: 20px;
+      }
+      .info-box li {
+        font-size: 12px;
+        color: #1e40af;
+        margin: 4px 0;
+      }
+      .preview-section {
+        border-top: 2px solid #e5e7eb;
+        padding-top: 16px;
+        margin-top: 16px;
+      }
+      .preview-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        color: #059669;
+        font-weight: 600;
+      }
+      .help-text {
         font-size: 11px;
         color: #6b7280;
         margin-top: 4px;
+      }
+      .api-help {
+        background: #f0f9ff;
+        border-radius: 6px;
+        padding: 12px;
+        margin-top: 8px;
+      }
+      .api-help p {
+        margin: 4px 0;
+        font-size: 11px;
+        color: #1e40af;
+      }
+      .api-help ol {
+        margin: 8px 0;
+        padding-left: 20px;
+      }
+      .api-help li {
+        font-size: 11px;
+        color: #1e40af;
+        margin: 4px 0;
+      }
+      .api-help a {
+        color: #2563eb;
+        text-decoration: underline;
       }
     </style>
   </head>
   <body>
     <div class="header">
-      <span>💼</span>
-      <h3 style="margin: 0">LinkedIn Job Auto-Applier</h3>
+      <span style="font-size: 24px">💼</span>
+      <h3 style="margin: 0">Job Application Assistant</h3>
     </div>
 
     <div class="tabs">
@@ -126,68 +268,87 @@
     <div class="content">
       <!-- Apply Tab -->
       <div id="apply-tab" class="tab-content">
-        <div class="upload-box" id="resumeUpload">
-          <span id="resumeText">📄 Click to upload resume (PDF)</span>
+        <!-- Resume Upload -->
+        <div class="section">
+          <div class="upload-box" id="resumeUpload">
+            <span id="resumeText">📄 Upload Resume (Optional)</span>
+            <input
+              type="file"
+              id="resumeFile"
+              accept=".pdf,.doc,.docx"
+              style="display: none"
+            />
+          </div>
+        </div>
+
+        <!-- Job Post Input -->
+        <div class="section">
+          <label>Paste Job Post (from anywhere!)</label>
+          <textarea
+            id="jobPost"
+            rows="8"
+            placeholder="Paste your job post here...&#10;&#10;Example:&#10;🚀 We're Hiring – Data Analyst | Dubai&#10;💰 Salary: Competitive&#10;Requirements:&#10;- Bachelor's degree&#10;- 1-3 years experience&#10;📩 Apply: email@company.com"
+          ></textarea>
+          <p class="help-text">
+            Works with LinkedIn, WhatsApp, email, or any text format
+          </p>
+        </div>
+
+        <!-- Extract Info Button -->
+        <button class="btn-purple" id="extractBtn">
+          <span>🔍</span> Extract Job Info (Optional)
+        </button>
+
+        <!-- Extracted Info Display -->
+        <div id="extractedInfo" class="info-box hidden">
+          <h4>✓ Extracted Information:</h4>
+          <p id="extractedContent"></p>
+        </div>
+
+        <!-- HR Email -->
+        <div class="section">
+          <label>HR Email / Contact Email *</label>
           <input
-            type="file"
-            id="resumeFile"
-            accept=".pdf"
-            style="display: none"
+            type="email"
+            id="hrEmail"
+            placeholder="hr@company.com or recruiter@company.com"
           />
         </div>
 
-        <button class="btn-primary" id="extractBtn">
-          🔍 Extract Job Details from LinkedIn
-        </button>
-
-        <div style="margin-top: 16px">
-          <label>Job Title</label>
-          <input
-            type="text"
-            id="jobTitle"
-            placeholder="e.g., Senior Frontend Developer"
-          />
-
-          <label>Company Name</label>
-          <input
-            type="text"
-            id="companyName"
-            placeholder="e.g., Tech Corp Inc."
-          />
-
-          <label>HR Email</label>
-          <input type="email" id="hrEmail" placeholder="hr@company.com" />
-
-          <label>HR Name (Optional)</label>
-          <input type="text" id="hrName" placeholder="e.g., Sarah Johnson" />
-
-          <label>Job Description</label>
-          <textarea
-            id="jobDescription"
-            rows="3"
-            placeholder="Paste job description here..."
-          ></textarea>
-
+        <!-- Additional Details -->
+        <div class="section">
           <label>Additional Details (Optional)</label>
           <textarea
             id="additionalDetails"
-            rows="2"
-            placeholder="Any specific points you want to mention..."
+            rows="3"
+            placeholder="Add anything specific you want to mention...&#10;e.g., relevant projects, availability, why you're interested"
           ></textarea>
         </div>
 
+        <!-- Generate Button -->
         <button class="btn-success" id="generateBtn">
-          ✨ Generate Email with AI
+          <span>✨</span> Generate Professional Email
         </button>
 
-        <div id="emailPreview" class="hidden" style="margin-top: 16px">
-          <label>Email Subject</label>
-          <input type="text" id="emailSubject" />
+        <!-- Email Preview -->
+        <div id="emailPreview" class="hidden preview-section">
+          <div class="preview-header">
+            <span>✓</span> Email Preview - Review Before Sending
+          </div>
 
-          <label>Email Body</label>
-          <textarea id="emailBody" rows="8"></textarea>
+          <div class="section">
+            <label>Subject:</label>
+            <input type="text" id="emailSubject" />
+          </div>
 
-          <button class="btn-primary" id="sendBtn">📧 Send via Gmail</button>
+          <div class="section">
+            <label>Email Body: (You can edit)</label>
+            <textarea id="emailBody" rows="12"></textarea>
+          </div>
+
+          <button class="btn-send" id="sendBtn">
+            <span>📧</span> Send via Gmail
+          </button>
         </div>
 
         <div id="status"></div>
@@ -195,37 +356,46 @@
 
       <!-- Settings Tab -->
       <div id="settings-tab" class="tab-content hidden">
-        <h4 style="margin-top: 0">API Configuration</h4>
+        <h3 style="margin-top: 0; display: flex; align-items: center; gap: 8px">
+          <span>⚙️</span> Configuration
+        </h3>
 
-        <label>Google Gemini API Key (Free)</label>
-        <input
-          type="password"
-          id="geminiKey"
-          placeholder="Enter your Gemini API key"
-        />
-        <p class="small-text">
-          Get free key:
-          <a href="https://makersuite.google.com/app/apikey" target="_blank"
-            >makersuite.google.com</a
-          >
-        </p>
+        <div class="section">
+          <label>Google Gemini API Key *</label>
+          <input
+            type="password"
+            id="geminiKey"
+            placeholder="Enter your Gemini API key"
+          />
 
-        <div style="margin-top: 20px">
-          <h4>Resume Settings</h4>
-          <label>Default Resume</label>
-          <div class="upload-box" id="defaultResumeUpload">
-            <span id="defaultResumeText">📄 Upload default resume</span>
-            <input
-              type="file"
-              id="defaultResumeFile"
-              accept=".pdf"
-              style="display: none"
-            />
+          <div class="api-help">
+            <p style="font-weight: 600; margin-bottom: 8px">
+              📝 How to get FREE API key:
+            </p>
+            <ol>
+              <li>
+                Visit:
+                <a
+                  href="https://makersuite.google.com/app/apikey"
+                  target="_blank"
+                  >makersuite.google.com/app/apikey</a
+                >
+              </li>
+              <li>Sign in with Google account</li>
+              <li>Click "Create API Key" button</li>
+              <li>Copy the key and paste here</li>
+            </ol>
+            <p style="margin-top: 8px; font-weight: 600">
+              ✓ Free tier includes:
+            </p>
+            <p style="margin-left: 12px">• 60 requests per minute</p>
+            <p style="margin-left: 12px">• 1,500 requests per day</p>
+            <p style="margin-left: 12px">• No credit card required!</p>
           </div>
         </div>
 
         <button class="btn-primary" id="saveSettingsBtn">
-          💾 Save Settings
+          <span>💾</span> Save Settings
         </button>
 
         <div id="settingsStatus"></div>

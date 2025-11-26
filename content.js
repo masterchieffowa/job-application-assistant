@@ -1,7 +1,7 @@
+// This runs on LinkedIn pages if user wants to auto-extract
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "extractJobDetails") {
+  if (request.action === "extractFromLinkedIn") {
     try {
-      // Extract job details from LinkedIn page
       const jobTitle =
         document
           .querySelector(
@@ -19,27 +19,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           .querySelector(".jobs-description__content, .jobs-box__html-content")
           ?.textContent?.trim() || "";
 
-      // Try to find HR email or contact info
-      let hrEmail = "";
-      const links = document.querySelectorAll('a[href^="mailto:"]');
-      if (links.length > 0) {
-        hrEmail = links[0].href.replace("mailto:", "");
-      }
+      let fullPost = `Job Title: ${jobTitle}\n`;
+      fullPost += `Company: ${company}\n\n`;
+      fullPost += description;
 
-      sendResponse({
-        success: true,
-        data: {
-          title: jobTitle,
-          company: company,
-          description: description,
-          hrEmail: hrEmail,
-        },
-      });
+      sendResponse({ success: true, jobPost: fullPost });
     } catch (error) {
-      sendResponse({
-        success: false,
-        error: error.message,
-      });
+      sendResponse({ success: false, error: error.message });
     }
   }
   return true;
