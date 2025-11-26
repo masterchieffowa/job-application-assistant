@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body {
+        width: 450px;
+        min-height: 500px;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+      }
+      .header {
+        background: linear-gradient(135deg, #0077b5, #00a0dc);
+        color: white;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .tab {
+        flex: 1;
+        padding: 12px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-weight: 500;
+        color: #6b7280;
+      }
+      .tab.active {
+        color: #0077b5;
+        border-bottom: 2px solid #0077b5;
+      }
+      .content {
+        padding: 16px;
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 8px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+      }
+      .btn-primary {
+        background: #0077b5;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #006399;
+      }
+      .btn-success {
+        background: #10b981;
+        color: white;
+      }
+      .btn-success:hover {
+        background: #059669;
+      }
+      .status {
+        padding: 12px;
+        margin-top: 12px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+      .status.success {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .status.error {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .upload-box {
+        border: 2px dashed #d1d5db;
+        padding: 16px;
+        text-align: center;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-bottom: 12px;
+      }
+      .hidden {
+        display: none;
+      }
+      label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 4px;
+        display: block;
+      }
+      .small-text {
+        font-size: 11px;
+        color: #6b7280;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <span>💼</span>
+      <h3 style="margin: 0">LinkedIn Job Auto-Applier</h3>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="apply">Apply</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </div>
+
+    <div class="content">
+      <!-- Apply Tab -->
+      <div id="apply-tab" class="tab-content">
+        <div class="upload-box" id="resumeUpload">
+          <span id="resumeText">📄 Click to upload resume (PDF)</span>
+          <input
+            type="file"
+            id="resumeFile"
+            accept=".pdf"
+            style="display: none"
+          />
+        </div>
+
+        <button class="btn-primary" id="extractBtn">
+          🔍 Extract Job Details from LinkedIn
+        </button>
+
+        <div style="margin-top: 16px">
+          <label>Job Title</label>
+          <input
+            type="text"
+            id="jobTitle"
+            placeholder="e.g., Senior Frontend Developer"
+          />
+
+          <label>Company Name</label>
+          <input
+            type="text"
+            id="companyName"
+            placeholder="e.g., Tech Corp Inc."
+          />
+
+          <label>HR Email</label>
+          <input type="email" id="hrEmail" placeholder="hr@company.com" />
+
+          <label>HR Name (Optional)</label>
+          <input type="text" id="hrName" placeholder="e.g., Sarah Johnson" />
+
+          <label>Job Description</label>
+          <textarea
+            id="jobDescription"
+            rows="3"
+            placeholder="Paste job description here..."
+          ></textarea>
+
+          <label>Additional Details (Optional)</label>
+          <textarea
+            id="additionalDetails"
+            rows="2"
+            placeholder="Any specific points you want to mention..."
+          ></textarea>
+        </div>
+
+        <button class="btn-success" id="generateBtn">
+          ✨ Generate Email with AI
+        </button>
+
+        <div id="emailPreview" class="hidden" style="margin-top: 16px">
+          <label>Email Subject</label>
+          <input type="text" id="emailSubject" />
+
+          <label>Email Body</label>
+          <textarea id="emailBody" rows="8"></textarea>
+
+          <button class="btn-primary" id="sendBtn">📧 Send via Gmail</button>
+        </div>
+
+        <div id="status"></div>
+      </div>
+
+      <!-- Settings Tab -->
+      <div id="settings-tab" class="tab-content hidden">
+        <h4 style="margin-top: 0">API Configuration</h4>
+
+        <label>Google Gemini API Key (Free)</label>
+        <input
+          type="password"
+          id="geminiKey"
+          placeholder="Enter your Gemini API key"
+        />
+        <p class="small-text">
+          Get free key:
+          <a href="https://makersuite.google.com/app/apikey" target="_blank"
+            >makersuite.google.com</a
+          >
+        </p>
+
+        <div style="margin-top: 20px">
+          <h4>Resume Settings</h4>
+          <label>Default Resume</label>
+          <div class="upload-box" id="defaultResumeUpload">
+            <span id="defaultResumeText">📄 Upload default resume</span>
+            <input
+              type="file"
+              id="defaultResumeFile"
+              accept=".pdf"
+              style="display: none"
+            />
+          </div>
+        </div>
+
+        <button class="btn-primary" id="saveSettingsBtn">
+          💾 Save Settings
+        </button>
+
+        <div id="settingsStatus"></div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
